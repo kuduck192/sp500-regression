@@ -1,5 +1,7 @@
 import pandas as pd 
 import numpy as np
+from geometric_dataset import SpatioTemporalDataset
+from torch_geometric.transforms import GCNNorm
 
 
 def convert3dtensor(nodes, df: pd.DataFrame):
@@ -104,3 +106,57 @@ def load_edge(adj_path="../input/adj_ae-bert.npy"):
                 count += 1
                 
     return edge_index, edge_weight
+
+def load_torchgeometric_data(train=True, LOOKBACK = 30, HORIZON=1, adj_path="../input/adj_ae-bert.npy"):
+    """
+    A funtion aims to split inital data into train, test, split using Time-series K-fold split technique.
+    The data must be in form of customized SpatioTemporalDataset
+    
+    The last month data is considered as the test dataset.
+    
+    Args:
+        - train (bool): If True, return 4 folds, each fold consists of both training & validation sets. 
+        Otherwise, it would return test set with entire training set.
+        - adj_path (str): Path to corresponding adjacency matrix
+        - LOOKBACK (int): the length of past window used to predict the next days
+        - HORIZON (int): number of next days needs to be predicted
+    Return:
+        (list): Set of couples, each couple consists of 2 sets, the second following the first by time
+    """
+    
+    edge_index, edge_weight = load_edge(adj_path)
+    
+    folds = load_data(train)
+    
+    new_folds = []
+    
+    transfrom = GCNNorm()
+    
+    for fold in folds:
+        train, other = fold[0], fold[1]
+        
+        converted_train = train.transpose(0, 2, 1)
+        converted_other = train.transpose(0, 2, 1)
+        
+        train_datset = SpatioTemporalDataset(
+            data_array=converted_train,
+            edge_index=edge_index,
+            edge_weight=edge_weight,
+            lookback=LOOKBACK,
+            horizon=HORIZON,
+            transform=transfrom
+        )
+        
+        test_dataset = SpatioTemporalDataset(
+            data_array=converted_other,
+            edge_index=edge_index,
+            edge_weight=edge_weight,
+            lookback=LOOKBACK,
+            horizon=HORIZON,
+            transform=transfrom
+        )
+        
+        new_folds.append((train_datset, test_dataset))
+        
+    return new_folds
+        
