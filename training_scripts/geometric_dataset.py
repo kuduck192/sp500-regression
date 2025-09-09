@@ -29,9 +29,9 @@ class SpatioTemporalDataset(Dataset):
         self.edge_attr = None
         
         if (edge_attr is not None):
-            self.edge_attr = edge_attr
+            self.edge_attr = torch.from_numpy(edge_attr).float()
         if (edge_weight is not None):
-            self.edge_weight = edge_weight
+            self.edge_weight = torch.from_numpy(edge_weight).float()
         
         self._num_timestamps = data_array.shape[2]
     
