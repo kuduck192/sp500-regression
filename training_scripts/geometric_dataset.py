@@ -15,10 +15,11 @@ class SpatioTemporalDataset(Dataset):
         horizon (int): number of next days needs to be predcted
     """
     
-    def __init__(self, data_array, edge_index, edge_attr=None, edge_weight=None, lookback=30, horizon=1):
+    def __init__(self, data_array, edge_index, edge_attr=None, edge_weight=None, transform=None, lookback=30, horizon=1):
         super().__init__()
         self.lookback = lookback
         self.horizon = horizon
+        self.transform = transform
         
         self.x_data = torch.from_numpy(data_array).float()
         self.edge_index = torch.from_numpy(edge_index).long()
@@ -51,10 +52,15 @@ class SpatioTemporalDataset(Dataset):
         x_window = self.x_data[:, :, start_x:end_x]
         y_window = self.x_data[:, :, start_y:end_y]  
         
-        return Data(
+        data = Data(
             x = x_window,
             edge_index = self.edge_index,
             edge_attr = self.edge_attr,
             edge_weight=self.edge_weight, 
             y=y_window
         )   
+        
+        if self.transform:
+            data = self.transform(data)
+        
+        return data
