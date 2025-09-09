@@ -73,4 +73,34 @@ def load_data(train=True):
         
     return folds
         
+def load_edge(adj_path="../input/adj_ae-bert.npy"):
+    """ 
+    A function aims to construct edge-related matrix using the 
+    pre-defined adjacency matrix
+    
+    Args:
+        adj_path (str): Path to the corresponding adjacency matrix, which is 
+        either correlation adjacency matrix or AE combined BERT adjacency matrix
         
+    Return:
+        (np.ndarray, np.ndarray): 2 edge-related matricies, the first one
+        is edge_index matrix, which is in form of (2, num of edges), each row representing for
+        (source, destination), and the other is edge_weight matrix in form of (edge_weight,) each row
+        representing for weight of the corresponding edge
+    """
+    adj_matrix = np.load(adj_path)
+    
+    nodes_nb = len(adj_matrix)
+    edge_nb = np.count_nonzero(adj_matrix)
+    edge_index = np.zeros((2, edge_nb))
+    edge_weight = np.zeros((edge_nb))
+    count = 0
+    
+    for i in range(nodes_nb):
+        for j in range(nodes_nb):
+            if (weight := adj_matrix[i, j]) != 0:
+                edge_index[0, count], edge_index[1, count] = i, j
+                edge_weight[count] = weight
+                count += 1
+                
+    return edge_index, edge_weight
